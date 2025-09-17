@@ -1,28 +1,30 @@
-# dt — Day-to-day Dev Toolbox
+# dt - Dev toolkit that doesn't suck 🛠️
 
-A small, fast Go CLI that bundles everyday developer utilities—JSON inspection, date conversions, UUID generation, Base64 transforms, and environment-variable helpers—in a single command built for shell piping.
+Tired of juggling 15 different CLI tools just to format some JSON and convert a timestamp? Yeah, me too. 
+
+`dt` is a single Go binary that packs all those everyday dev utilities you actually use into one fast, pipe-friendly command. JSON formatting, date wrangling, UUID generation, Base64 encoding, hash generation, and environment variable helpers - all in one place.
 
 ---
 
-## Install
+## Getting Started
 
 ```sh
 go install ./...
-# or
+# or build it yourself
 go build -o dt .
 ```
 
-_Requires Go 1.21 or newer. The first invocation pulls `github.com/spf13/cobra` automatically._
+You'll need Go 1.21+. First run automatically grabs the Cobra dependency.
 
 ---
 
-## Usage Basics
+## How it works
 
-- Every command reads from stdin when piping is detected; otherwise it uses positional arguments.
-- Successful results go to stdout; diagnostics go to stderr so you can chain commands safely.
-- Run `dt --help`, `dt <namespace> --help`, or `dt <namespace> <command> --help` for interactive flag info.
+`dt` is designed to play nice with Unix pipes. It'll read from stdin when you pipe data to it, otherwise it uses whatever arguments you pass. Results go to stdout, errors to stderr, so you can chain commands without worrying about breaking your pipeline.
 
-### Quick Glance
+Hit `dt --help` for the full command list, or `dt <command> --help` for specific flags.
+
+### Quick examples
 
 ```sh
 # Pretty-print JSON (stringified or raw)
@@ -50,18 +52,19 @@ pbpaste | dt text join --quote double --sep ', '
 
 ---
 
-## Command Reference
+## What can it do? 
 
-All examples assume the binary name is `dt` and that you are running them from a Unix-like shell. Replace sample inputs with your own values.
+Here's everything `dt` can handle. Examples use Unix-style shells - just swap in your own values.
 
 ### JSON Commands
 
 #### `dt json pretty`
 
-- **Synopsis:** `dt json pretty [--indent 2]`
-- **Purpose:** Reformat JSON with configurable indentation. Automatically unwraps up to three levels of quoted JSON so you can pipe stringified payloads directly.
+Makes ugly JSON readable. It's smart enough to unwrap stringified JSON up to 3 levels deep, so you can pipe those gnarly escaped payloads straight in.
+
+- **Usage:** `dt json pretty [--indent 2]`
 - **Flags:**
-  - `--indent <n>` — number of spaces per level (default: `2`).
+  - `--indent <n>` - spaces per level (default: 2)
 - **Example:**
   ```sh
   echo '"{\"service\":\"api\",\"ports\":[80,443]}"' | dt json pretty
@@ -77,11 +80,12 @@ All examples assume the binary name is `dt` and that you are running them from a
 
 #### `dt json stringify`
 
-- **Synopsis:** `dt json stringify [--compact] [--no-quotes] <json|stdin>`
-- **Purpose:** Turn JSON into a JSON string literal that can be embedded in config or code.
+Need to embed JSON in config files or code? This escapes it properly so you don't have to manually escape all those quotes.
+
+- **Usage:** `dt json stringify [--compact] [--no-quotes] <json|stdin>`
 - **Flags:**
-  - `--compact` — emit the shortest equivalent string (no spaces or newlines).
-  - `--no-quotes` — omit the surrounding quotes (useful when another tool adds its own quoting).
+  - `--compact` - removes all whitespace for the smallest output
+  - `--no-quotes` - skip the outer quotes (handy when your tooling adds them)
 - **Example:**
 
   ```sh
@@ -98,11 +102,12 @@ All examples assume the binary name is `dt` and that you are running them from a
 
 #### `dt base64 encode`
 
-- **Synopsis:** `dt base64 encode [--url] [--no-pad]`
-- **Purpose:** Convert stdin or arguments into Base64. Supports standard and URL-safe alphabets.
+Standard Base64 encoding with options for URL-safe output and padding control.
+
+- **Usage:** `dt base64 encode [--url] [--no-pad]`
 - **Flags:**
-  - `--url` — use the URL-safe alphabet (`-` and `_`).
-  - `--no-pad` — omit `=` padding (useful for JWT-style payloads).
+  - `--url` - use URL-safe characters (`-` and `_` instead of `+` and `/`)
+  - `--no-pad` - drop the `=` padding (great for JWTs)
 - **Example:**
 
   ```sh
@@ -117,10 +122,11 @@ All examples assume the binary name is `dt` and that you are running them from a
 
 #### `dt base64 decode`
 
-- **Synopsis:** `dt base64 decode [--url]`
-- **Purpose:** Decode Base64 strings, automatically trying padded and unpadded forms.
+Decodes Base64 back to the original. Smart enough to handle both padded and unpadded inputs.
+
+- **Usage:** `dt base64 decode [--url]`
 - **Flags:**
-  - `--url` — treat input as URL-safe Base64.
+  - `--url` - decode URL-safe Base64
 - **Example:**
   ```sh
   echo 'YXBwOnNlY3JldA==' | dt base64 decode
@@ -130,15 +136,14 @@ All examples assume the binary name is `dt` and that you are running them from a
 
 ### Hash Commands
 
-Hash inputs using common algorithms. Commands accept stdin or arguments and support optional salts.
+Generate hashes with all the common algorithms. Supports salting and multiple output formats.
 
 #### `dt hash <algorithm>`
 
-- **Synopsis:** `dt hash sha256|sha512|sha3-256|sha3-512|sha1|md5 [--encoding hex|base64] [--salt <value>]`
-- **Purpose:** Produce message digests, defaulting to hex output.
+- **Usage:** `dt hash sha256|sha512|sha3-256|sha3-512|sha1|md5 [--encoding hex|base64] [--salt <value>]`
 - **Flags:**
-  - `--encoding` — choose between `hex` (default) and `base64`.
-  - `--salt` — append a literal salt string to the input before hashing.
+  - `--encoding` - hex (default) or base64 output
+  - `--salt` - add a salt string before hashing
 - **Example:**
 
   ```sh
@@ -156,15 +161,16 @@ Hash inputs using common algorithms. Commands accept stdin or arguments and supp
 
 #### `dt text join`
 
-- **Synopsis:** `dt text join [--sep ","] [--quote single|double|none] [--split lines|tab|csv] [--trim] [--skip-empty] [--unique] [items...]`
-- **Purpose:** Collapse multi-line, tabular, or CSV input into a single separator-delimited row with optional quoting. Ideal for turning spreadsheet columns or clipboard lists into shell-ready or SQL-ready strings.
+Perfect for turning spreadsheet columns or lists into SQL IN clauses, shell arrays, or any delimited format you need.
+
+- **Usage:** `dt text join [--sep ","] [--quote single|double|none] [--split lines|tab|csv] [--trim] [--skip-empty] [--unique] [items...]`
 - **Flags:**
-  - `--sep` — separator string; supports escape sequences such as `\n`, `\t`, `\r`, and NUL (`\0`). Default `,`.
-  - `--quote` — wrap each value with single quotes (default), double quotes, or no quoting.
-  - `--split` — choose how to split raw input: newline-delimited (`lines`), tab/line separated (`tab`), or CSV-aware (`csv`, respecting quoted commas).
-  - `--trim` / `--no-trim` — control per-item whitespace trimming (defaults to on).
-  - `--skip-empty` / `--skip-empty=false` — drop empty items after trimming (defaults to on).
-  - `--unique` — keep the first occurrence of each value and drop duplicates.
+  - `--sep` - what to put between items (supports `\n`, `\t`, `\r`, `\0`). Default: `,`
+  - `--quote` - single quotes (default), double quotes, or none
+  - `--split` - how to parse input: `lines`, `tab`, or `csv` (handles quoted commas)
+  - `--trim` / `--no-trim` - strip whitespace from each item (on by default)
+  - `--skip-empty` - ignore empty items after trimming (on by default)  
+  - `--unique` - remove duplicates, keeping the first occurrence
 - **Examples:**
 
   ```sh
@@ -181,15 +187,15 @@ Hash inputs using common algorithms. Commands accept stdin or arguments and supp
   # 'Widget, Large','Small'
   ```
 
-
 ### Date Commands
 
-All date commands accept either CLI arguments or piped input. Layout strings use Go's `time` reference layout (`2006-01-02 15:04:05`).
+All the date/time wrangling you need. Commands work with arguments or piped input. Layout strings use Go's reference time format (`2006-01-02 15:04:05`).
 
 #### `dt date now`
 
-- **Synopsis:** `dt date now [--format rfc3339|unix|unixms|layout] [--layout <fmt>] [--utc]`
-- **Purpose:** Print the current time. Defaults to RFC3339 in local time.
+Get the current time in whatever format you need.
+
+- **Usage:** `dt date now [--format rfc3339|unix|unixms|layout] [--layout <fmt>] [--utc]`
 - **Example:**
 
   ```sh
@@ -204,8 +210,9 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 #### `dt date to-epoch`
 
-- **Synopsis:** `dt date to-epoch [--layout <fmt>] [--ms] [--utc] <time...|stdin>`
-- **Purpose:** Convert human-readable timestamps into Unix seconds (default) or milliseconds (`--ms`). Auto-detects common layouts.
+Turn readable timestamps into Unix epochs. Auto-detects most common formats.
+
+- **Usage:** `dt date to-epoch [--layout <fmt>] [--ms] [--utc] <time...|stdin>`
 - **Example:**
 
   ```sh
@@ -220,8 +227,9 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 #### `dt date from-epoch`
 
-- **Synopsis:** `dt date from-epoch [--format rfc3339|unix|unixms|layout] [--layout <fmt>] [--utc] <epoch...|stdin>`
-- **Purpose:** Convert Unix timestamps (seconds or milliseconds) into formatted time strings.
+Convert those Unix timestamps back into something humans can read.
+
+- **Usage:** `dt date from-epoch [--format rfc3339|unix|unixms|layout] [--layout <fmt>] [--utc] <epoch...|stdin>`
 - **Example:**
 
   ```sh
@@ -236,8 +244,9 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 #### `dt date add`
 
-- **Synopsis:** `dt date add --duration <GoDuration> [--from <time|epoch>] [--format rfc3339|unix|unixms|layout] [--layout <fmt>] [--utc]`
-- **Purpose:** Add or subtract Go-style durations (`1h30m`, `-15m`, etc.) from either _now_ or a supplied timestamp.
+Time math made easy. Add or subtract durations using Go's format (`1h30m`, `-15m`, etc.).
+
+- **Usage:** `dt date add --duration <GoDuration> [--from <time|epoch>] [--format rfc3339|unix|unixms|layout] [--layout <fmt>] [--utc]`
 - **Example:**
 
   ```sh
@@ -254,10 +263,11 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 #### `dt uuid new`
 
-- **Synopsis:** `dt uuid new [-n <count>]`
-- **Purpose:** Generate cryptographically secure UUIDv4 identifiers.
+Generate UUIDv4s. Cryptographically secure, as many as you need.
+
+- **Usage:** `dt uuid new [-n <count>]`
 - **Flags:**
-  - `-n`, `--count` — number of UUIDs to emit (default: `1`).
+  - `-n`, `--count` - how many UUIDs to generate (default: 1)
 - **Example:**
   ```sh
   dt uuid new -n 2
@@ -270,13 +280,14 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 #### `dt env from-json`
 
-- **Synopsis:** `dt env from-json [--uppercase] [--prefix <PFX>] [--flatten] [--sep _]`
-- **Purpose:** Convert a JSON object into `KEY=VALUE` lines suitable for exporting into shells or `.env` files.
-- **Flag nuances:**
-  - `--uppercase` — transform keys to uppercase before any prefix is applied.
-  - `--prefix` — prepend a string to every key (e.g., `APP_`).
-  - `--flatten` — recurse through nested objects, joining segments with `--sep` (default `_`). Arrays are serialized as compact JSON to preserve order.
-  - `--sep` — separator used when flattening nested keys.
+Turn JSON configs into shell environment variables. Great for Docker, CI/CD, or any `.env` workflow.
+
+- **Usage:** `dt env from-json [--uppercase] [--prefix <PFX>] [--flatten] [--sep _]`
+- **Flags:**
+  - `--uppercase` - MAKE_KEYS_LIKE_THIS
+  - `--prefix` - add a prefix to every key (like `APP_`)
+  - `--flatten` - turn nested objects into flat keys with separators
+  - `--sep` - what to use for separating nested keys (default: `_`)
 - **Example input (`config.json`):**
   ```json
   {
@@ -300,8 +311,9 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 #### `dt env from-kv`
 
-- **Synopsis:** `dt env from-kv [--uppercase] [--prefix <PFX>]`
-- **Purpose:** Convert `key: value` style pairs (e.g., copied from YAML) into `KEY=VALUE` lines. Blanks and `#` comments are ignored.
+Parse `key: value` pairs (like from YAML) into environment variables. Ignores comments and blank lines.
+
+- **Usage:** `dt env from-kv [--uppercase] [--prefix <PFX>]`
 - **Example:**
   ```sh
   printf '# Service\nhost: localhost\nport: 8080\nrelease: canary\n' | dt env from-kv --uppercase
@@ -315,8 +327,9 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 #### `dt completion`
 
-- **Synopsis:** `dt completion {bash|zsh|fish|powershell}`
-- **Purpose:** Emit shell completion scripts for your chosen shell. Pipe or redirect the result to the appropriate configuration file.
+Get tab completion working in your shell. Because nobody likes typing long command names.
+
+- **Usage:** `dt completion {bash|zsh|fish|powershell}`
 - **Examples:**
 
   ```sh
@@ -330,20 +343,21 @@ All date commands accept either CLI arguments or piped input. Layout strings use
 
 ---
 
-## Workflow Tips
+## Pro tips 💡
 
-- Chain commands freely: `dt json pretty | bat -l json`, `kubectl get pod -o json | dt json pretty`, or `terraform output -json | dt env from-json` for `.env` exports.
-- When piping secret material, combine with `base64 encode --no-pad` or `env from-json --prefix` to match your deployment tooling.
-- Use `dt date --help` to browse the built-in layouts before reaching for custom formatting.
+`dt` plays well with other tools. Try chaining commands like:
+- `dt json pretty | bat -l json` for syntax highlighted output  
+- `kubectl get pod -o json | dt json pretty` to make K8s output readable
+- `terraform output -json | dt env from-json` to generate `.env` files
+
+When handling secrets, `dt base64 encode --no-pad` or `dt env from-json --prefix` can help match your deployment tooling's format.
 
 ---
 
-## Development
+## Contributing
 
-Run tests before shipping changes:
+Want to hack on `dt`? Cool! Just make sure the tests pass:
 
 ```sh
 go test ./...
 ```
-
----
