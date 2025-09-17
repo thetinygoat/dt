@@ -128,6 +128,30 @@ All examples assume the binary name is `dt` and that you are running them from a
   # app:secret
   ```
 
+### Hash Commands
+
+Hash inputs using common algorithms. Commands accept stdin or arguments and support optional salts.
+
+#### `dt hash <algorithm>`
+
+- **Synopsis:** `dt hash sha256|sha512|sha3-256|sha3-512|sha1|md5 [--encoding hex|base64] [--salt <value>]`
+- **Purpose:** Produce message digests, defaulting to hex output.
+- **Flags:**
+  - `--encoding` — choose between `hex` (default) and `base64`.
+  - `--salt` — append a literal salt string to the input before hashing.
+- **Example:**
+
+  ```sh
+  echo -n 'hello' | dt hash sha3-256
+  # 3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392
+
+  dt hash sha256 --encoding base64 hello
+  # LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ=
+
+  echo -n 'hello' | dt hash md5 --salt pepper
+  # 6967321c83e9f01a33e7edecce748877
+  ```
+
 ### Text Commands
 
 #### `dt text join`

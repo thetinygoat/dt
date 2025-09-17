@@ -182,11 +182,56 @@ func TestTextJoin_DoubleQuoteCSV(t *testing.T) {
 
 func TestTextJoin_CustomSepUnique(t *testing.T) {
 	in := "Alpha\nBeta\nAlpha\n"
-	out, _, err := run(t, []string{"text", "join", "--sep", "|", "--unique"}, in)
+	out, _, err := run(t, []string{"text", "join", "--sep", "|", "--unique", "--quote", "single"}, in)
 	if err != nil {
 		t.Fatalf("text join unique err: %v", err)
 	}
 	if strings.TrimSpace(out) != "'Alpha'|'Beta'" {
 		t.Fatalf("unexpected unique join: %q", out)
+	}
+}
+
+func TestHash_Digests(t *testing.T) {
+	tests := []struct {
+		name  string
+		args  []string
+		stdin string
+		want  string
+	}{
+		{
+			name:  "sha256 hex",
+			args:  []string{"hash", "sha256"},
+			stdin: "hello",
+			want:  "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+		},
+		{
+			name:  "sha256 base64",
+			args:  []string{"hash", "sha256", "--encoding", "base64"},
+			stdin: "hello",
+			want:  "LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ=",
+		},
+		{
+			name:  "md5 salted",
+			args:  []string{"hash", "md5", "--salt", "pepper"},
+			stdin: "hello",
+			want:  "6967321c83e9f01a33e7edecce748877",
+		},
+		{
+			name:  "sha3-256 hex",
+			args:  []string{"hash", "sha3-256"},
+			stdin: "hello",
+			want:  "3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			out, _, err := run(t, tc.args, tc.stdin)
+			if err != nil {
+				t.Fatalf("hash err: %v", err)
+			}
+			if got := strings.TrimSpace(out); got != tc.want {
+				t.Fatalf("unexpected digest: got %q want %q", got, tc.want)
+			}
+		})
 	}
 }
