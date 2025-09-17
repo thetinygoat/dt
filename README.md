@@ -43,6 +43,9 @@ dt uuid new -n 3
 # Environment helpers
 cat cfg.json | dt env from-json --uppercase --flatten --sep '_' --prefix APP_
 printf 'host: localhost\nport: 8080\n' | dt env from-kv
+
+# Join spreadsheet columns into a quoted list
+pbpaste | dt text join --quote double --sep ', '
 ```
 
 ---
@@ -124,6 +127,36 @@ All examples assume the binary name is `dt` and that you are running them from a
   # Output
   # app:secret
   ```
+
+### Text Commands
+
+#### `dt text join`
+
+- **Synopsis:** `dt text join [--sep ","] [--quote single|double|none] [--split lines|tab|csv] [--trim] [--skip-empty] [--unique] [items...]`
+- **Purpose:** Collapse multi-line, tabular, or CSV input into a single separator-delimited row with optional quoting. Ideal for turning spreadsheet columns or clipboard lists into shell-ready or SQL-ready strings.
+- **Flags:**
+  - `--sep` — separator string; supports escape sequences such as `\n`, `\t`, `\r`, and NUL (`\0`). Default `,`.
+  - `--quote` — wrap each value with single quotes (default), double quotes, or no quoting.
+  - `--split` — choose how to split raw input: newline-delimited (`lines`), tab/line separated (`tab`), or CSV-aware (`csv`, respecting quoted commas).
+  - `--trim` / `--no-trim` — control per-item whitespace trimming (defaults to on).
+  - `--skip-empty` / `--skip-empty=false` — drop empty items after trimming (defaults to on).
+  - `--unique` — keep the first occurrence of each value and drop duplicates.
+- **Examples:**
+
+  ```sh
+  # Google Sheets column -> SQL IN clause
+  pbpaste | dt text join --quote double --sep ', '
+  # "Alice", "Bob", "Charlie"
+
+  # TSV clipboard -> pipe-delimited list without quotes
+  printf 'alpha\tbeta\tgamma\n' | dt text join --split tab --quote none --sep ' | '
+  # alpha | beta | gamma
+
+  # CSV row with embedded commas -> single-quoted values
+  printf '"Widget, Large",Small\n' | dt text join --split csv
+  # 'Widget, Large','Small'
+  ```
+
 
 ### Date Commands
 
